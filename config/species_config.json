@@ -1,0 +1,37 @@
+{
+  "georgia_birds": [
+    {
+      "common_name": "Northern Cardinal",
+      "scientific_name": "Cardinalis cardinalis"
+    },
+    {
+      "common_name": "Carolina Wren",
+      "scientific_name": "Thryothorus ludovicianus"
+    },
+    {
+      "common_name": "Blue Jay",
+      "scientific_name": "Cyanocitta cristata"
+    },
+    {
+      "common_name": "American Robin",
+      "scientific_name": "Turdus migratorius"
+    },
+    {
+      "common_name": "Mourning Dove",
+      "scientific_name": "Zenaida macroura"
+    },
+    {
+      "common_name": "Tufted Titmouse",
+      "scientific_name": "Baeolophus bicolor"
+    },
+    {
+      "common_name": "Carolina Chickadee",
+      "scientific_name": "Poecile carolinensis"
+    },
+    {
+      "common_name": "Eastern Bluebird",
+      "scientific_name": "Sialia sialis"
+    }
+  ]
+}
+

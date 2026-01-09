@@ -1,0 +1,10 @@
+---
+description: "Instructions for activating the pyenv environment before running commands"
+alwaysApply: true
+---
+
+Before running any Python commands or scripts in this project, ensure that the pyenv environment is activated:
+
+- This project uses Python 3.10.0 managed via pyenv
+- Activate the environment using: `pyenv activate bird-classification`
+- Always activate the pyenv environment before installing dependencies or running scripts

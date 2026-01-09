@@ -1,0 +1,25 @@
+---
+description: "Instructions for loading environment variables from .env files in notebooks and scripts"
+alwaysApply: true
+---
+
+When working with notebooks or scripts that require API keys or other environment variables:
+
+- Always import and call `load_dotenv()` at the beginning of notebooks or scripts that need environment variables
+- Use `from dotenv import load_dotenv` followed by `load_dotenv()` before accessing environment variables
+- This ensures that API keys stored in `.env` files (like `XENO_CANTO_API_KEY`) are available to the code
+- The `.env` file should be in the project root directory
+- Example:
+  ```python
+  from dotenv import load_dotenv
+  load_dotenv()
+  
+  # Now environment variables are available
+  import os
+  api_key = os.getenv('XENO_CANTO_API_KEY')
+  ```
+
+This is especially important for:
+- Jupyter notebooks that use the XenoCantoService
+- Any scripts that interact with APIs requiring authentication
+- Services that read configuration from environment variables
