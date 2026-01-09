@@ -8,6 +8,9 @@
 * **Key Dependencies**: 
   * `requests` - API interactions
   * `boto3` - AWS S3 integration (for data storage)
+  * `librosa` - Audio processing and spectrogram generation
+  * `matplotlib` - Image generation for spectrograms
+  * `pandas` - Data manipulation and metadata management
 * **Development Environment**: 
   * **Cursor IDE** - Primary development environment (agent-specific files are present for Cursor AI assistance)
   * **Jupyter Notebooks** - For experimentation and analysis
@@ -32,9 +35,18 @@ s3://bird-classification-data/
   │   ├── carolina_wren/
   │   │   └── ...
   │   └── ...
+  ├── spectrograms/
+  │   ├── northern_cardinal/
+  │   │   ├── {recording_id}.png
+  │   │   └── ...
+  │   ├── carolina_wren/
+  │   │   └── ...
+  │   └── ...
   └── metadata/
       ├── recordings_metadata.csv
-      └── recordings_metadata.json
+      ├── recordings_metadata.json
+      ├── spectrograms_metadata.csv
+      └── spectrograms_metadata.json
 ```
 
 #### **AWS Credentials Setup**
@@ -145,6 +157,37 @@ This approach ensures:
 * Clear separation between raw data and derived artifacts  
 * Easy integration with AWS SageMaker and batch processing jobs
 
+### **Spectrogram Generation Pipeline**
+
+Audio files are converted to **mel spectrograms** (time-frequency representations) for machine learning workflows. Spectrograms are saved as PNG images and stored in S3 alongside the original audio files.
+
+**Workflow:**
+
+1. Load recordings metadata from S3.  
+2. For each recording:
+   - Download audio file from S3 to temporary location
+   - Generate mel spectrogram using librosa
+   - Save spectrogram as PNG image
+   - Upload spectrogram to S3
+   - Clean up local files
+3. Generate and upload spectrogram metadata (CSV/JSON) to S3.
+
+**Spectrogram Parameters:**
+
+The pipeline uses standardized parameters optimized for bird call classification:
+
+* **n_fft**: 2048 (FFT window size)
+* **hop_length**: 512 (overlap between windows)
+* **n_mels**: 128 (number of mel filter banks)
+* **fmin**: 0 Hz (minimum frequency)
+* **fmax**: 8000 Hz (maximum frequency - covers typical bird call range)
+* **Sample rate**: 22050 Hz (standard for audio analysis)
+* **Image format**: PNG (lossless, suitable for ML)
+
+**Notebook:** `notebooks/create_spectrograms_from_audio.ipynb`
+
+The notebook processes all recordings in batch, skips existing spectrograms (idempotent), and generates comprehensive metadata linking spectrograms to their source recordings.
+
 ### **Metadata Handling**
 
 Metadata returned from the Xeno-canto API is normalized and stored alongside the audio files. A structured dataset (e.g., CSV) is created with fields such as:
@@ -163,10 +206,50 @@ This metadata is loaded using **pandas** and acts as the authoritative source fo
 * Train / validation splits  
 * Dataset filtering (e.g., removing low-quality recordings)
 
+**Spectrogram Metadata:**
+
+The spectrogram generation pipeline creates additional metadata with fields such as:
+
+* `recording_id` - Links to original recording
+* `spectrogram_s3_uri` - S3 location of spectrogram image
+* `audio_s3_uri` - Original audio file location
+* `spectrogram_params` - JSON string of parameters used (n_fft, hop_length, n_mels, etc.)
+* `image_width`, `image_height` - Spectrogram image dimensions
+* `sample_rate` - Audio sample rate
+* `duration_seconds` - Audio duration
+* `species_common_name`, `species_scientific_name` - For easy filtering
+
+### **Machine Learning Pipeline Considerations**
+
+This project prepares data for bird call classification using spectrogram images. For the ML phase, consider these AWS options prioritizing low cost:
+
+**Image Classification Approach (Spectrograms):**
+
+1. **SageMaker JumpStart**: Pre-trained image classification models
+   - Fine-tune on spectrogram images
+   - Pay only for training/inference time
+   - No infrastructure management
+   - Models: ResNet, EfficientNet, Vision Transformer
+
+2. **SageMaker Built-in Algorithms**: Image classification
+   - Managed training and deployment
+   - Cost-effective for small datasets (~700 images)
+   - Built-in data augmentation
+
+**Alternative: Tabular Data Approach:**
+
+- Extract audio features (MFCCs, spectral features) instead of images
+- Use SageMaker built-in tabular algorithms (XGBoost, etc.)
+- Lower cost, faster training
+- May require less data preprocessing
+
+**Recommendation**: Start with spectrograms (images) for flexibility and visual interpretability, but document feature extraction as an alternative approach for cost optimization.
+
 ### **Key Design Decisions**
 
 * **Xeno-canto is the only data source** (no Kaggle, no mixed datasets).  
 * **AWS S3 is the canonical storage layer** for all raw and processed data.  
-* Audio labeling is inherited directly from Xeno-canto metadata (no manual labeling).  
-* Dataset size is deliberately constrained to support low-cost experimentation.
+* **Audio labeling is inherited directly from Xeno-canto metadata** (no manual labeling).  
+* **Dataset size is deliberately constrained** to support low-cost experimentation.
+* **Mel spectrograms** are used as the primary feature representation for ML (standard in audio classification).
 

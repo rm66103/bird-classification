@@ -250,6 +250,67 @@ class S3Manager:
         prefix = f"raw-audio/{species_path}/"
         return self.list_files(prefix)
     
+    def upload_spectrogram_file(
+        self,
+        local_file_path: str,
+        species_common_name: str,
+        recording_id: str,
+        metadata: Optional[Dict[str, str]] = None
+    ) -> Optional[str]:
+        """
+        Upload a spectrogram image file to S3 with standardized path structure.
+        
+        Args:
+            local_file_path: Path to local spectrogram image file
+            species_common_name: Common name of the bird species
+            recording_id: Xeno-canto recording ID
+            metadata: Optional metadata dictionary
+        
+        Returns:
+            S3 URI of uploaded file, or None if upload failed
+        """
+        # Normalize species name for path
+        species_path = species_common_name.replace(' ', '_').lower()
+        
+        # Get file extension (should be .png)
+        file_ext = Path(local_file_path).suffix or '.png'
+        
+        # Construct S3 key
+        s3_key = f"spectrograms/{species_path}/{recording_id}{file_ext}"
+        
+        if self.upload_file(local_file_path, s3_key, metadata):
+            return f"s3://{self.bucket_name}/{s3_key}"
+        return None
+    
+    def list_spectrograms_by_species(self, species_common_name: str) -> List[str]:
+        """
+        List all spectrogram files for a specific species.
+        
+        Args:
+            species_common_name: Common name of the bird species
+        
+        Returns:
+            List of S3 keys for that species' spectrogram files
+        """
+        species_path = species_common_name.replace(' ', '_').lower()
+        prefix = f"spectrograms/{species_path}/"
+        return self.list_files(prefix)
+    
+    def spectrogram_exists(self, species_common_name: str, recording_id: str) -> bool:
+        """
+        Check if a spectrogram already exists for a recording.
+        
+        Args:
+            species_common_name: Common name of the bird species
+            recording_id: Xeno-canto recording ID
+        
+        Returns:
+            True if spectrogram exists, False otherwise
+        """
+        species_path = species_common_name.replace(' ', '_').lower()
+        s3_key = f"spectrograms/{species_path}/{recording_id}.png"
+        return self.file_exists(s3_key)
+    
     def get_s3_uri(self, s3_key: str) -> str:
         """
         Get full S3 URI for a given key.
